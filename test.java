@@ -1,10 +1,7 @@
 import javax.swing.*;
 import javax.swing.text.MaskFormatter;
-
 import java.awt.*;
 import java.awt.event.*;
-import java.text.Format;
-import java.text.MessageFormat;
 import java.text.ParseException;
 
 public class test extends JFrame implements ActionListener {
@@ -33,13 +30,13 @@ public class test extends JFrame implements ActionListener {
             text.setPreferredSize(new Dimension(25, 25));
 
             panel.add(text);
-            
+            text.addActionListener(this);
         }
 
         setContentPane(panel);
     }
 
     public void actionPerformed(ActionEvent event) {
-
+        System.out.println(event.);
     }
 }

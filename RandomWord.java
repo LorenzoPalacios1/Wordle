@@ -50,4 +50,8 @@ public class RandomWord {
                 System.err.printf("Test %d returned non-alphabetical characters\nReturned data: %s\n", i, words[i]);
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 3f6813a6ebf87d353719c1943bde9de36df466c4

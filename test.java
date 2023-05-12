@@ -2,6 +2,7 @@ import javax.swing.*;
 import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.text.ParseException;
 
 public class test extends JFrame implements ActionListener {
@@ -10,11 +11,12 @@ public class test extends JFrame implements ActionListener {
     private JFormattedTextField text;
     private MaskFormatter charOnly;
 
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) throws ParseException, IOException {
         JFrame frame = new test();
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        System.out.println(RandomWord.generateWord());
     }
 
     test() throws ParseException {
@@ -37,6 +39,6 @@ public class test extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent event) {
-        System.out.println(event.);
+        System.out.println(event);
     }
 }

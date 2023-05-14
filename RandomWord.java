@@ -7,7 +7,7 @@ public class RandomWord {
     public static String generateWord() throws IOException {
         final URLConnection wordSource = new URL("https://random-word-api.herokuapp.com/word?length=5")
                 .openConnection();
-        wordSource.setReadTimeout(3000);
+        wordSource.setReadTimeout(5000);
 
         final InputStream word = wordSource.getInputStream();
 
@@ -25,7 +25,7 @@ public class RandomWord {
         }
 
         // Returning word
-        if (!formattedWord.isEmpty()) {
+        if (!formattedWord.isBlank()) {
             return formattedWord;
         }
         return null;
@@ -35,19 +35,30 @@ public class RandomWord {
     public static void main(String[] args) throws IOException {
         String words[] = new String[5];
 
+        boolean failed;
         for (int i = 0; i < words.length; i++) {
+            failed = false;
             words[i] = generateWord();
 
-            if (words[i].isEmpty()) {
-                System.err.printf("Test %d string is blank\n", i);
+            if (words[i] == null) {
+                System.err.printf("Test %d returned null\n", i);
                 continue;
             }
 
-            if (words[i].length() != 5)
+            if (words[i].length() != 5) {
                 System.err.printf("Test %d returned string length not equal to 5\nReturned data: %s\n", i, words[i]);
+                failed = true;
+            }
 
-            if (!words[i].matches("[^a-zA-Z]"))
+            if (!words[i].matches("[a-zA-Z]+")) {
                 System.err.printf("Test %d returned non-alphabetical characters\nReturned data: %s\n", i, words[i]);
+                failed = true;
+            }
+
+            if (!failed)
+                System.out.printf("Test %d success: %s\n", i, words[i]);
         }
+
+        System.out.println("Tests complete");
     }
 }

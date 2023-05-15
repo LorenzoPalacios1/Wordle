@@ -48,6 +48,6 @@ public class test extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent event) {
-        System.out.println(event.getActionCommand());
+        System.out.println(event);
     }
 }

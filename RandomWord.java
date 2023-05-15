@@ -24,7 +24,7 @@ public class RandomWord {
         }
 
         // Returning word
-        if (!formattedWord.isEmpty()) {
+        if (!formattedWord.isBlank()) {
             return formattedWord;
         }
         return null;

@@ -4,6 +4,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class RandomWord {
+    
     public static String generateWord() throws IOException {
         final URLConnection wordSource = new URL("https://random-word-api.herokuapp.com/word?length=5")
                 .openConnection();

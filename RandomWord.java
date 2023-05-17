@@ -19,6 +19,8 @@ public class RandomWord {
         word.read();
         word.read();
 
+        // readAllBytes() is a function in newer Java versions, so it's unused
+        // to preserve backwards compatability
         String formattedWord = "";
         for (int i = 0; i < 5; i++) {
             formattedWord += (char) word.read();

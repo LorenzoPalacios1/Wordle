@@ -30,6 +30,10 @@ public class Wordle extends JFrame implements KeyListener {
         panelMain = new JPanel();
         panelMain.setPreferredSize(new Dimension(600, 400));
 
+        // Title creation
+        title = new JTextArea("Wordle");
+        title.setPreferredSize(new Dimension(300, 150));
+
         // Panel to arrange char boxes into a vertical column
         charBoxes = new JPanel(new GridLayout(6, 1));
 
@@ -40,6 +44,7 @@ public class Wordle extends JFrame implements KeyListener {
         // Setting the active panel to the first set of char boxes created
         resetActiveCharPanel();
 
+        panelMain.add(title);
         panelMain.add(charBoxes);
         activePanel.addKeyListener(this);
 
@@ -65,7 +70,7 @@ public class Wordle extends JFrame implements KeyListener {
     }
 
     private void resetActiveCharPanel() {
-        // Removing previous active panel's keylisteners if existent
+        // Removing previous active panel's keylisteners if they're existent
         if (activePanel != null) {
             for (Component charBox : activePanel.getComponents()) {
                 charBox.removeKeyListener(this);
@@ -82,6 +87,10 @@ public class Wordle extends JFrame implements KeyListener {
     private String readActiveCharPanel() {
         String word = "";
 
+        // Instantiating a temporary array that will hold all charboxes within the
+        // active panel
+        // This is necessary because getComponent() returns a type of Component, which
+        // is a super class of JFormattedTextField (the charbox)
         JFormattedTextField temp[] = new JFormattedTextField[activePanel.getComponentCount()];
         for (int i = 0; i < temp.length; i++) {
             if (activePanel.getComponent(i) instanceof JFormattedTextField) {
@@ -89,6 +98,7 @@ public class Wordle extends JFrame implements KeyListener {
             }
         }
 
+        // Actual reading
         for (JFormattedTextField charBox : temp) {
             word += charBox.getText();
         }

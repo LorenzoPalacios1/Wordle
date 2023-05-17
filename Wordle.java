@@ -9,6 +9,8 @@ public class Wordle extends JFrame implements KeyListener {
     private JPanel panelMain;
     private JPanel charBoxes;
 
+    private JTextArea title;
+
     // These variables keep track of guesses and attempts
     private JPanel activePanel;
     private int attempt = 0;
@@ -19,6 +21,29 @@ public class Wordle extends JFrame implements KeyListener {
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+    }
+
+    // Driving constructor
+    Wordle() throws ParseException {
+        super("Wordle");
+
+        panelMain = new JPanel();
+        panelMain.setPreferredSize(new Dimension(600, 400));
+
+        // Panel to arrange char boxes into a vertical column
+        charBoxes = new JPanel(new GridLayout(6, 1));
+
+        // Creating char-only input boxes
+        for (int i = 0; i < 6; i++) {
+            createCharBoxRow(5);
+        }
+        // Setting the active panel to the first set of char boxes created
+        resetActiveCharPanel();
+
+        panelMain.add(charBoxes);
+        activePanel.addKeyListener(this);
+
+        setContentPane(panelMain);
     }
 
     private void createCharBoxRow(int numBoxes) throws ParseException {
@@ -56,37 +81,18 @@ public class Wordle extends JFrame implements KeyListener {
 
     private String readActiveCharPanel() {
         String word = "";
-        System.out.println(activePanel.getComponent(0).getClass());
-        /*
-         * for (Component charBox : activePanel.getComponents()) {
-         * word += charBox.getText();
-         * }
-         */
-        return word;
-    }
 
-    // Driving constructor
-    Wordle() throws ParseException {
-        super("char box test");
-
-        panelMain = new JPanel();
-        panelMain.setPreferredSize(new Dimension(600, 400));
-
-        // Panel to arrange char boxes into a vertical column
-        charBoxes = new JPanel(new GridLayout(6, 1));
-
-        // Creating char-only input boxes
-        for (int i = 0; i < 6; i++) {
-            createCharBoxRow(5);
+        JFormattedTextField temp[] = new JFormattedTextField[activePanel.getComponentCount()];
+        for (int i = 0; i < temp.length; i++) {
+            if (activePanel.getComponent(i) instanceof JFormattedTextField) {
+                temp[i] = (JFormattedTextField) activePanel.getComponent(i);
+            }
         }
 
-        // Setting the active panel to the first set of char boxes created
-        resetActiveCharPanel();
-
-        panelMain.add(charBoxes);
-        activePanel.addKeyListener(this);
-
-        setContentPane(panelMain);
+        for (JFormattedTextField charBox : temp) {
+            word += charBox.getText();
+        }
+        return word;
     }
 
     // Associated key events (only keyReleased used)
@@ -95,8 +101,11 @@ public class Wordle extends JFrame implements KeyListener {
 
     public void keyReleased(KeyEvent key) {
         if (key.getKeyCode() == KeyEvent.VK_ENTER) {
-            String inputtedString = readActiveCharPanel();
-            System.out.println(inputtedString);
+            String inputtedString = readActiveCharPanel().trim();
+
+            if (inputtedString.length() == 5) {
+                System.out.println(inputtedString);
+            }
         }
     }
 

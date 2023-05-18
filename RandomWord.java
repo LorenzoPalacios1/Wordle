@@ -4,7 +4,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class RandomWord {
-    
+    // Generates a single five letter word per call
     public static String generateWord() throws IOException {
         final URLConnection wordSource = new URL("https://random-word-api.herokuapp.com/word?length=5")
                 .openConnection();
@@ -13,8 +13,8 @@ public class RandomWord {
         final InputStream word = wordSource.getInputStream();
 
         /*
-         * The raw returned word contains two prefixed and suffixed brackets and double
-         * quotes, so we discard the first two bytes.
+         * The raw return from 'wordSource' contains a bracket and double quotes at its beginning
+         * and end, so we discard the first two bytes.
          */
         word.read();
         word.read();

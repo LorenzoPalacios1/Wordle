@@ -9,7 +9,7 @@ public class Wordle extends JFrame implements KeyListener {
     private JPanel panelMain;
     private JPanel charBoxes;
 
-    private JTextArea title;
+    private JLabel title;
 
     // These variables keep track of guesses and attempts
     private JPanel activePanel;
@@ -31,8 +31,9 @@ public class Wordle extends JFrame implements KeyListener {
         panelMain.setPreferredSize(new Dimension(600, 400));
 
         // Title creation
-        title = new JTextArea("Wordle");
+        title = new JLabel();
         title.setPreferredSize(new Dimension(300, 150));
+        title.setText("Wordle");
 
         // Panel to arrange char boxes into a vertical column
         charBoxes = new JPanel(new GridLayout(6, 1));
@@ -51,6 +52,9 @@ public class Wordle extends JFrame implements KeyListener {
         setContentPane(panelMain);
     }
 
+    // Assembles a 'numBoxes' amount of JFormattedTextFields that only accept a
+    // single char and puts them into a JPanel 'charBoxPanel' which is added then as
+    // a child of 'charBoxes'
     private void createCharBoxRow(int numBoxes) throws ParseException {
         final MaskFormatter charOnlyFormatter = new MaskFormatter("?");
         final GridLayout layout = new GridLayout(1, 5);
@@ -69,15 +73,16 @@ public class Wordle extends JFrame implements KeyListener {
         charBoxes.add(charBoxPanel);
     }
 
+    //
     private void resetActiveCharPanel() {
-        // Removing previous active panel's keylisteners if they're existent
+        // Removing previous active panel's KeyListeners if they exist
         if (activePanel != null) {
             for (Component charBox : activePanel.getComponents()) {
                 charBox.removeKeyListener(this);
             }
         }
 
-        // Adding new keylisteners to the newly set active panel
+        // Adding new KeyListeners to the newly set active panel
         activePanel = (JPanel) charBoxes.getComponent(attempt);
         for (Component charBox : activePanel.getComponents()) {
             charBox.addKeyListener(this);

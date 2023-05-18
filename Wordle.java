@@ -95,18 +95,15 @@ public class Wordle extends JFrame implements KeyListener {
         // Instantiating a temporary array that will hold all charboxes within the
         // active panel
         // This is necessary because getComponent() returns a type of Component, which
-        // is a super class of JFormattedTextField (the charbox)
+        // is a super class of JFormattedTextField (the charbox) and lacks getText()
         JFormattedTextField temp[] = new JFormattedTextField[activePanel.getComponentCount()];
         for (int i = 0; i < temp.length; i++) {
             if (activePanel.getComponent(i) instanceof JFormattedTextField) {
                 temp[i] = (JFormattedTextField) activePanel.getComponent(i);
+                word += temp[i];
             }
         }
 
-        // Actual reading
-        for (JFormattedTextField charBox : temp) {
-            word += charBox.getText();
-        }
         return word;
     }
 

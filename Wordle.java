@@ -3,7 +3,6 @@ import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.text.ParseException;
 
 public class Wordle extends JFrame implements KeyListener {
@@ -102,6 +101,7 @@ public class Wordle extends JFrame implements KeyListener {
         // is a super class of JFormattedTextField (the charbox) and lacks getText()
         final JFormattedTextField temp[] = new JFormattedTextField[activePanel.getComponentCount()];
 
+        // Reading chars from 'activePanel' into String 'word'
         for (int i = 0; i < temp.length; i++) {
             if (activePanel.getComponent(i) instanceof JFormattedTextField) {
                 temp[i] = (JFormattedTextField) activePanel.getComponent(i);
@@ -125,7 +125,6 @@ public class Wordle extends JFrame implements KeyListener {
 
     // Associated key events (only keyReleased used)
     public void keyPressed(KeyEvent key) {
-
     }
 
     public void keyReleased(KeyEvent key) {

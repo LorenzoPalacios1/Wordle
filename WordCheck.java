@@ -14,15 +14,10 @@ public class WordCheck {
         // Catching anything that isn't a word
         try {
             final InputStream response = dictionary.getInputStream();
-            byte temp[] = new byte[10 + word.length()];
-            response.readNBytes(temp, 10, 10 + word.length());
-            for (int i = 0; i < temp.length; i++)
-                System.out.println(temp[i]);
+            return true;
         } catch (Exception e) {
             return false;
         }
-
-        return false;
     }
 
     // Tests
@@ -40,11 +35,12 @@ public class WordCheck {
             }
 
             if (checkWord(words[i])) {
-                System.out.printf("Test %d success: %s is a word\n", i, words[i]);
+                System.out.printf("WordCheck Test %d success: %s is a word\n", i, words[i]);
+            } else {
+                System.out.printf("WordCheck Test %d success: %s is NOT a word\n", i, words[i]);
             }
-
         }
 
-        System.out.println("Tests complete");
+        System.out.println("WordCheck tests complete");
     }
 }

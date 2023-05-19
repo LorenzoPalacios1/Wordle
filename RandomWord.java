@@ -43,24 +43,24 @@ public class RandomWord {
             words[i] = generateWord();
 
             if (words[i] == null) {
-                System.err.printf("Test %d returned null\n", i);
+                System.err.printf("RandomWord Test %d returned null\n", i);
                 continue;
             }
 
             if (words[i].length() != 5) {
-                System.err.printf("Test %d returned string length not equal to 5\nReturned data: %s\n", i, words[i]);
+                System.err.printf("RandomWord Test %d returned string length not equal to 5\nReturned data: %s\n", i, words[i]);
                 failed = true;
             }
 
             if (!words[i].matches("[a-zA-Z]+")) {
-                System.err.printf("Test %d returned non-alphabetical characters\nReturned data: %s\n", i, words[i]);
+                System.err.printf("RandomWord Test %d returned non-alphabetical characters\nReturned data: %s\n", i, words[i]);
                 failed = true;
             }
 
             if (!failed)
-                System.out.printf("Test %d success: %s\n", i, words[i]);
+                System.out.printf("RandomWord Test %d success: %s\n", i, words[i]);
         }
 
-        System.out.println("Tests complete");
+        System.out.println("RandomWord tests complete");
     }
 }

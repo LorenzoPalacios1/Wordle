@@ -3,17 +3,21 @@ import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.text.ParseException;
 
 public class Wordle extends JFrame implements KeyListener {
-    private JPanel panelMain;
-    private JPanel charBoxes;
+    protected JPanel panelMain;
+    protected JPanel charBoxes;
 
-    private JLabel title;
+    protected JLabel title;
 
     // These variables keep track of guesses and attempts
-    private JPanel activePanel;
-    private int attempt = 0;
+    protected JPanel activePanel;
+    protected int attempt = 0;
+
+    // THE Word
+    protected String generatedWord;
 
     // main()
     public static void main(String[] args) throws ParseException, IOException {
@@ -33,12 +37,13 @@ public class Wordle extends JFrame implements KeyListener {
         // Title creation
         title = new JLabel();
         title.setPreferredSize(new Dimension(300, 150));
+        title.setFont(new Font("Arial", 1, 60));
         title.setText("Wordle");
 
         // Panel to arrange char boxes into a vertical column
         charBoxes = new JPanel(new GridLayout(6, 1));
 
-        // Creating char-only input boxes
+        // Creating six rows of char-only input boxes
         for (int i = 0; i < 6; i++) {
             createCharBoxRow(5);
         }
@@ -55,12 +60,12 @@ public class Wordle extends JFrame implements KeyListener {
     // Assembles a 'numBoxes' amount of JFormattedTextFields that only accept a
     // single char and puts them into a JPanel 'charBoxPanel' which is added then as
     // a child of 'charBoxes'
-    private void createCharBoxRow(int numBoxes) throws ParseException {
+    protected void createCharBoxRow(int numBoxes) throws ParseException {
         final MaskFormatter charOnlyFormatter = new MaskFormatter("?");
         final GridLayout layout = new GridLayout(1, 5);
         final Dimension panelSize = new Dimension(240, 40);
 
-        JPanel charBoxPanel = new JPanel(layout);
+        final JPanel charBoxPanel = new JPanel(layout);
         charBoxPanel.setPreferredSize(panelSize);
 
         JFormattedTextField newCharBox;
@@ -74,7 +79,7 @@ public class Wordle extends JFrame implements KeyListener {
     }
 
     //
-    private void resetActiveCharPanel() {
+    protected void resetActiveCharPanel() {
         // Removing previous active panel's KeyListeners if they exist
         if (activePanel != null) {
             for (Component charBox : activePanel.getComponents()) {
@@ -89,34 +94,46 @@ public class Wordle extends JFrame implements KeyListener {
         }
     }
 
-    private String readActiveCharPanel() {
+    protected String readActiveCharPanel() {
         String word = "";
-
         // Instantiating a temporary array that will hold all charboxes within the
         // active panel
         // This is necessary because getComponent() returns a type of Component, which
         // is a super class of JFormattedTextField (the charbox) and lacks getText()
-        JFormattedTextField temp[] = new JFormattedTextField[activePanel.getComponentCount()];
+        final JFormattedTextField temp[] = new JFormattedTextField[activePanel.getComponentCount()];
+
         for (int i = 0; i < temp.length; i++) {
             if (activePanel.getComponent(i) instanceof JFormattedTextField) {
                 temp[i] = (JFormattedTextField) activePanel.getComponent(i);
-                word += temp[i];
+                word += temp[i].getText();
             }
         }
 
         return word;
     }
 
+    // Takes a word and acts on the current 'activePanel'
+    protected void interpretInputtedWord(String word) {
+        try {
+            if (WordCheck.checkWord(word)) {
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // Associated key events (only keyReleased used)
     public void keyPressed(KeyEvent key) {
+
     }
 
     public void keyReleased(KeyEvent key) {
         if (key.getKeyCode() == KeyEvent.VK_ENTER) {
-            String inputtedString = readActiveCharPanel().trim();
+            final String inputtedString = readActiveCharPanel().trim();
 
             if (inputtedString.length() == 5) {
-                System.out.println(inputtedString);
+                interpretInputtedWord(inputtedString);
             }
         }
     }

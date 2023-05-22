@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.*;
@@ -46,6 +48,10 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             System.out.println(generatedWord);
         } while (!WordCheck.checkWord(generatedWord));
         frame.setVisible(true);
+        do {
+            generatedWord = RandomWord.generateWord();
+            System.out.println(generatedWord);
+        } while (!WordCheck.checkWord(generatedWord));
     }
 
     // Driving constructor
@@ -60,6 +66,10 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         title.setPreferredSize(new Dimension(300, 150));
         title.setFont(new Font("Arial", 1, 60));
         title.setText("Wordle");
+
+        messageLabel = new JLabel();
+        messageLabel.setPreferredSize(new Dimension(400, 30));
+        messageLabel.setFont(new Font("Arial", 2, 16));
 
         messageLabel = new JLabel();
         messageLabel.setPreferredSize(new Dimension(400, 30));
@@ -118,6 +128,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             newCharBox = new JFormattedTextField(charOnlyFormatter);
             newCharBox.setPreferredSize(new Dimension(40, 40));
             newCharBox.setEnabled(false);
+            newCharBox.setEnabled(false);
 
             charBoxPanel.add(newCharBox);
         }
@@ -125,6 +136,9 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     }
 
     // Sets an active row (panel) of char boxes
+    // If 'activePanel' is NOT initialized, then it assigns it a panel of char boxes
+    // If 'activePanel' is initialized, it disables the previous row and removes its
+    // KeyListeners while assigning the next row of char boxes Sets an active row (panel) of char boxes
     // If 'activePanel' is NOT initialized, then it assigns it a panel of char boxes
     // If 'activePanel' is initialized, it disables the previous row and removes its
     // KeyListeners while assigning the next row of char boxes
@@ -172,6 +186,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                 word += activePanelCharBoxes[i].getText();
             }
         }
+        activePanelCharBoxes[0].requestFocusInWindow();
 
         return word;
     }
@@ -179,13 +194,29 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // Takes a word and acts on the current 'activePanel'
     // This function changes char box colors, increments the player's current
     // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
+    // This function changes char box colors, increments the player's current
+    // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
     protected void interpretInputtedWord(String word) {
+        final Color charNotFound = new Color(155, 0, 0);
+        final Color charInString = new Color(180, 113, 50);
+        final Color charCorrectPlace = new Color(0, 155, 0);
+
         final Color charNotFound = new Color(155, 0, 0);
         final Color charInString = new Color(180, 113, 50);
         final Color charCorrectPlace = new Color(0, 155, 0);
 
         try {
             if (WordCheck.checkWord(word)) {
+                // Making sure banned letters aren't repeated and notifying the user as
+                // necessary
+                int index = -1;
+                for (int i = 0; i < bannedLetters.length(); i++) {
+                    index = word.indexOf(bannedLetters.charAt(i));
+                }
+
+                // Continues if a banned letter wasn't found
+                if (index == -1) {
+                    String currentChar;
                 // Making sure banned letters aren't repeated and notifying the user as
                 // necessary
                 int index = -1;
@@ -245,6 +276,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
 
             if (inputtedString.length() == 5) {
                 interpretInputtedWord(inputtedString);
+            } else {
+                notifyPlayer("Your guess must contain five letters.");
             } else {
                 notifyPlayer("Your guess must contain five letters.");
             }

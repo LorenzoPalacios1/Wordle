@@ -1,13 +1,14 @@
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLConnection;
 
 public class RandomWord {
     // Generates a single five letter word per call
     // Returns a word upon success and null upon failure
-    public static String generateWord() throws IOException {
-        final URLConnection wordSource = new URL("https://random-word-api.herokuapp.com/word?length=5")
+    public static String generateWord() throws IOException, URISyntaxException {
+        final URLConnection wordSource = new URI("https://random-word-api.herokuapp.com/word?length=5").toURL()
                 .openConnection();
         wordSource.setReadTimeout(5000);
 
@@ -35,7 +36,7 @@ public class RandomWord {
     // Tests
     // A completely successful run will print out a success message
     // Otherwise, any relevant data will be printed to 'System.err'
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         String word;
 
         boolean failed;

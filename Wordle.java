@@ -66,7 +66,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         title.setText("Wordle");
 
         messageLabel = new JLabel();
-        messageLabel.setPreferredSize(new Dimension(400, 30));
+        messageLabel.setPreferredSize(new Dimension(600, 30));
         messageLabel.setFont(new Font("Arial", 2, 16));
 
         messageLabel = new JLabel();
@@ -144,9 +144,6 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // If 'activePanel' is initialized, it disables the previous row and removes its
     // KeyListeners while assigning the next row of char boxes Sets an active row
     // (panel) of char boxes
-    // If 'activePanel' is NOT initialized, then it assigns it a panel of char boxes
-    // If 'activePanel' is initialized, it disables the previous row and removes its
-    // KeyListeners while assigning the next row of char boxes
     protected void resetActiveCharPanel() {
         // Removing previous active panel's KeyListeners if they exist
         if (activePanel != null) {
@@ -175,6 +172,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             for (JFormattedTextField charBox : activePanelCharBoxes) {
                 charBox.addKeyListener(this);
                 charBox.addActionListener(this);
+                charBox.setText(null);
                 charBox.setEnabled(true);
             }
             activePanelCharBoxes[0].requestFocusInWindow();
@@ -198,8 +196,6 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // Takes a word and acts on the current 'activePanel'
     // This function changes char box colors, increments the player's current
     // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
-    // This function changes char box colors, increments the player's current
-    // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
     protected void interpretInputtedWord(String word) {
         final Color charNotFound = new Color(155, 0, 0);
         final Color charInString = new Color(180, 113, 50);
@@ -210,7 +206,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                 // Making sure banned letters aren't repeated and notifying the user as
                 // necessary
                 int index = -1;
-                for (int i = 0; i < bannedLetters.length(); i++) {
+                for (int i = 0; i < bannedLetters.length() && index == -1; i++) {
                     index = word.indexOf(bannedLetters.charAt(i));
                 }
 
@@ -286,7 +282,9 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                     for (int x = 0; x < currentPanel.getComponentCount(); x++) {
                         JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(x);
                         if (currentCharBox.getText() != null) {
-                            currentCharBox.setBackground(currentBackgroundScheme);
+                            // Char box color scheme remains at light mode
+                            currentCharBox.setBackground(new Color(238, 238, 238));
+                            currentCharBox.setForeground(new Color(0, 0, 0));
                             currentCharBox.setText(null);
                             currentCharBox.setEnabled(false);
                         }

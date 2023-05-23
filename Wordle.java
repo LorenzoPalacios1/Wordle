@@ -26,7 +26,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     protected Color currentBackgroundScheme = new Color(238, 238, 238);
     protected Color currentTextScheme = new Color(0, 0, 0);
 
-    // For easy access to the char boxes
+    // For easy access to the active char boxes
     // This is necessary because panel.getComponent() returns a type of 'Component',
     // which is a super class of 'JFormattedTextField' (the charbox) and thus lacks
     // necessary functions and features
@@ -38,7 +38,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // Banned characters when the player guesses incorrectly
     protected String bannedLetters = "";
 
-    // main()
+    // Initializing function main()
     public static void main(String args[]) throws ParseException, IOException, URISyntaxException {
         JFrame frame = new Wordle();
         frame.pack();
@@ -79,8 +79,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         resetActiveCharPanel();
 
         // Creating retryButton and dark mode buttons
-        ImageIcon sunIcon = createImageIcon("sun.png"); // Used as icon for 'darkModeToggle'
-        ImageIcon retryIcon = createImageIcon("reload.png"); // Used as icon for 'retryButton'
+        ImageIcon sunIcon = createImageIcon("sun.png"); // Used as an icon for 'darkModeToggle'
+        ImageIcon retryIcon = createImageIcon("reload.png"); // Used as an icon for 'retryButton'
 
         retryButton = new JButton(retryIcon);
         retryButton.setToolTipText("Retry");
@@ -136,8 +136,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // Sets an active row (panel) of char boxes
     // If 'activePanel' is NOT initialized, then it assigns it a panel of char boxes
     // If 'activePanel' is initialized, it disables the previous row and removes its
-    // KeyListeners while assigning the next row of char boxes Sets an active row
-    // (panel) of char boxes
+    // KeyListeners while assigning the next row of char boxes
     protected void resetActiveCharPanel() {
         // Removing previous active panel's KeyListeners if they exist
         if (activePanel != null) {
@@ -178,6 +177,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         String word = "";
 
         // Reading chars from 'activePanel' into String 'word'
+        // refactor
         for (int i = 0; i < activePanelCharBoxes.length; i++) {
             if (activePanel.getComponent(i) instanceof JFormattedTextField) {
                 activePanelCharBoxes[i] = (JFormattedTextField) activePanel.getComponent(i);
@@ -265,7 +265,6 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         // guess
         if (attempt != 0) {
             try {
-
                 attempt = 0;
                 bannedLetters = "";
                 previousInput = "";
@@ -281,7 +280,6 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                     for (int x = 0; x < currentPanel.getComponentCount(); x++) {
                         JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(x);
                         if (currentCharBox.getText() != null) {
-                            // Char box color scheme remains at light mode
                             currentCharBox.setBackground(currentBackgroundScheme);
                             currentCharBox.setForeground(currentTextScheme);
                             currentCharBox.setText(null);
@@ -315,6 +313,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         // Setting all the panels to the new color scheme
         panelMain.setBackground(currentBackgroundScheme);
         for (Component item : panelMain.getComponents()) {
+            // refactor
             if (item instanceof JPanel) {
                 JPanel currentPanel = (JPanel) item;
                 currentPanel.setBackground(currentBackgroundScheme);

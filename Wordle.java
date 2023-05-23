@@ -65,7 +65,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         title.setText("Wordle");
 
         messageLabel = new JLabel();
-        messageLabel.setPreferredSize(new Dimension(400, 30));
+        messageLabel.setPreferredSize(new Dimension(600, 30));
         messageLabel.setFont(new Font("Arial", 2, 16));
 
         // Panel to arrange char boxes into a vertical column
@@ -166,7 +166,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             for (JFormattedTextField charBox : activePanelCharBoxes) {
                 charBox.addKeyListener(this);
                 charBox.addActionListener(this);
-                // charBox.setText(null);
+                charBox.setText(null);
                 charBox.setEnabled(true);
             }
             activePanelCharBoxes[0].requestFocusInWindow();

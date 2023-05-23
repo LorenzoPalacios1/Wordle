@@ -22,7 +22,6 @@ public class WordCheck {
         }
         // For anything other than FileNotFoundException
         catch (Exception other) {
-            System.err.printf("Exception message: %s\n Passed data: %s\n Trace:\n", other.getMessage(), word);
             other.printStackTrace();
             return false;
         }

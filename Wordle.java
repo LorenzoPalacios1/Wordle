@@ -1,11 +1,8 @@
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 
@@ -16,13 +13,18 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     protected JLabel title;
     protected JLabel messageLabel;
 
-    // Dark mode and retry buttons
-    protected JToggleButton retry;
+    // Dark mode and retryButton buttons
+    protected JButton retryButton;
     protected JToggleButton darkModeToggle;
 
     // These variables keep track of guesses and attempts
     protected JPanel activePanel;
     protected int attempt = 0;
+
+    // Used for either dark or light mode; starts off in light
+    protected Boolean isDarkMode = false;
+    protected Color currentBackgroundScheme = new Color(238, 238, 238);
+    protected Color currentTextScheme = new Color(0, 0, 0);
 
     // For easy access to the char boxes
     // This is necessary because panel.getComponent() returns a type of 'Component',
@@ -45,13 +47,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         // Word generation
         do {
             generatedWord = RandomWord.generateWord();
-            System.out.println(generatedWord);
         } while (!WordCheck.checkWord(generatedWord));
         frame.setVisible(true);
-        do {
-            generatedWord = RandomWord.generateWord();
-            System.out.println(generatedWord);
-        } while (!WordCheck.checkWord(generatedWord));
     }
 
     // Driving constructor
@@ -68,11 +65,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         title.setText("Wordle");
 
         messageLabel = new JLabel();
-        messageLabel.setPreferredSize(new Dimension(400, 30));
-        messageLabel.setFont(new Font("Arial", 2, 16));
-
-        messageLabel = new JLabel();
-        messageLabel.setPreferredSize(new Dimension(400, 30));
+        messageLabel.setPreferredSize(new Dimension(600, 30));
         messageLabel.setFont(new Font("Arial", 2, 16));
 
         // Panel to arrange char boxes into a vertical column
@@ -85,29 +78,35 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         // Setting the active panel to the first set of char boxes created
         resetActiveCharPanel();
 
-        // Creating retry and dark mode buttons
-        ImageIcon sunIcon = new ImageIcon(java.net.URL );
+        // Creating retryButton and dark mode buttons
+        ImageIcon sunIcon = createImageIcon("sun.png"); // Used as icon for 'darkModeToggle'
+        ImageIcon retryIcon = createImageIcon("reload.png"); // Used as icon for 'retryButton'
 
-        retry = new JToggleButton();
-        retry.setPreferredSize(new Dimension(50, 50));
-        darkModeToggle = new JToggleButton();
+        retryButton = new JButton(retryIcon);
+        retryButton.setToolTipText("Retry");
+        retryButton.setPreferredSize(new Dimension(50, 50));
+        retryButton.addActionListener(this);
+        darkModeToggle = new JToggleButton(sunIcon);
+        darkModeToggle.setToolTipText("Toggle Dark Mode");
         darkModeToggle.setPreferredSize(new Dimension(50, 50));
+        darkModeToggle.addActionListener(this);
 
         panelMain.add(title);
         panelMain.add(charBoxes);
         panelMain.add(messageLabel);
-        panelMain.add(retry);
+        panelMain.add(retryButton);
         panelMain.add(darkModeToggle);
 
         setContentPane(panelMain);
     }
 
+    // Creates an image for use as an icon
+    // Returns null if failed
     protected ImageIcon createImageIcon(String path) {
         java.net.URL imgURL = getClass().getResource(path);
         if (imgURL != null) {
             return new ImageIcon(imgURL);
         } else {
-            System.err.println("Couldn't find file: " + path);
             return null;
         }
     }
@@ -127,9 +126,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         for (int i = 0; i < numBoxes; i++) {
             newCharBox = new JFormattedTextField(charOnlyFormatter);
             newCharBox.setPreferredSize(new Dimension(40, 40));
-            newCharBox.setEnabled(false);
-            newCharBox.setEnabled(false);
-
+            newCharBox.setBackground(currentBackgroundScheme);
+            newCharBox.setEnabled(false); // resetActiveCharPanel() enables as necessary
             charBoxPanel.add(newCharBox);
         }
         charBoxes.add(charBoxPanel);
@@ -138,10 +136,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // Sets an active row (panel) of char boxes
     // If 'activePanel' is NOT initialized, then it assigns it a panel of char boxes
     // If 'activePanel' is initialized, it disables the previous row and removes its
-    // KeyListeners while assigning the next row of char boxes Sets an active row (panel) of char boxes
-    // If 'activePanel' is NOT initialized, then it assigns it a panel of char boxes
-    // If 'activePanel' is initialized, it disables the previous row and removes its
-    // KeyListeners while assigning the next row of char boxes
+    // KeyListeners while assigning the next row of char boxes Sets an active row
+    // (panel) of char boxes
     protected void resetActiveCharPanel() {
         // Removing previous active panel's KeyListeners if they exist
         if (activePanel != null) {
@@ -170,12 +166,14 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             for (JFormattedTextField charBox : activePanelCharBoxes) {
                 charBox.addKeyListener(this);
                 charBox.addActionListener(this);
+                charBox.setText(null);
                 charBox.setEnabled(true);
             }
             activePanelCharBoxes[0].requestFocusInWindow();
         }
     }
 
+    // Returns a String that consists of the characters the player has inputted
     protected String readActiveCharPanel() {
         String word = "";
 
@@ -186,7 +184,6 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                 word += activePanelCharBoxes[i].getText();
             }
         }
-        activePanelCharBoxes[0].requestFocusInWindow();
 
         return word;
     }
@@ -194,13 +191,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // Takes a word and acts on the current 'activePanel'
     // This function changes char box colors, increments the player's current
     // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
-    // This function changes char box colors, increments the player's current
-    // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
     protected void interpretInputtedWord(String word) {
-        final Color charNotFound = new Color(155, 0, 0);
-        final Color charInString = new Color(180, 113, 50);
-        final Color charCorrectPlace = new Color(0, 155, 0);
-
         final Color charNotFound = new Color(155, 0, 0);
         final Color charInString = new Color(180, 113, 50);
         final Color charCorrectPlace = new Color(0, 155, 0);
@@ -209,24 +200,17 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             if (WordCheck.checkWord(word)) {
                 // Making sure banned letters aren't repeated and notifying the user as
                 // necessary
+                // Stops after finding a single banned letter, hence 'index == -1'
                 int index = -1;
-                for (int i = 0; i < bannedLetters.length(); i++) {
+                for (int i = 0; i < bannedLetters.length() && index == -1; i++) {
                     index = word.indexOf(bannedLetters.charAt(i));
                 }
 
                 // Continues if a banned letter wasn't found
                 if (index == -1) {
                     String currentChar;
-                // Making sure banned letters aren't repeated and notifying the user as
-                // necessary
-                int index = -1;
-                for (int i = 0; i < bannedLetters.length(); i++) {
-                    index = word.indexOf(bannedLetters.charAt(i));
-                }
-
-                // Continues if a banned letter wasn't found
-                if (index == -1) {
-                    String currentChar;
+                    Boolean correctGuess = true; // Will turn to false if a character is incorrect
+                    // Used to determine if a guess is a winning one or not
 
                     for (int i = 0; i < word.length(); i++) {
                         currentChar = word.substring(i, i + 1);
@@ -236,16 +220,34 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                             // 'CharSequence' to be passed (basically a 'String'), so we can't use charAt()
                         } else if (currentChar != null && generatedWord.contains(currentChar)) {
                             activePanelCharBoxes[word.indexOf(currentChar)].setBackground(charInString);
+                            correctGuess = false;
                         } else {
                             activePanelCharBoxes[i].setBackground(charNotFound);
                             bannedLetters += currentChar;
+                            correctGuess = false;
                         }
                     }
                     attempt++;
-                    resetActiveCharPanel();
+                    // If the 'generatedWord' was guessed correctly
+                    if (correctGuess) {
+                        for (JFormattedTextField charbox : activePanelCharBoxes) {
+                            charbox.setEnabled(false);
+                        }
+                        if (attempt == 1) {
+                            notifyPlayer(String.format("Wow! You managed to guess \"%s\" in a single attempt!",
+                                    generatedWord));
+                        } else {
+                            notifyPlayer(String.format("Correct! You managed to guess \"%s\" in %d attempts!",
+                                    generatedWord, attempt));
+                        }
+                    } else {
+                        resetActiveCharPanel();
+                    }
                 } else {
                     notifyPlayer("Your guess contains banned letters.");
                 }
+            } else {
+                notifyPlayer("Input an actual word this time.");
             }
         } catch (IOException io) {
             io.printStackTrace();
@@ -254,14 +256,76 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         }
     }
 
-    protected void retry() throws MalformedURLException, IOException, URISyntaxException {
-        attempt = 0;
-        do {
-            generatedWord = RandomWord.generateWord();
-        } while (!WordCheck.checkWord(generatedWord));
+    // Clears all colors and text from the char boxes
+    // Sets 'attempt' to 0, bannedLetters to empty string, and generates a new word
+    // Will also clear 'messageLabel'
+    // Does NOT regenerate any other parts of the UI or reset color schemes
+    protected void restart() {
+        // Prevents player from dragging performance if they haven't made at least one
+        // guess
+        if (attempt != 0) {
+            try {
+
+                attempt = 0;
+                bannedLetters = "";
+                previousInput = "";
+                do {
+                    generatedWord = RandomWord.generateWord();
+                } while (!WordCheck.checkWord(generatedWord));
+
+                // Getting all the JPanels of 'charBoxes'
+                for (int i = 0; i < charBoxes.getComponentCount(); i++) {
+                    JPanel currentPanel = (JPanel) charBoxes.getComponent(i);
+
+                    // Getting and modifying all of the char boxes in 'currentPanel'
+                    for (int x = 0; x < currentPanel.getComponentCount(); x++) {
+                        JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(x);
+                        if (currentCharBox.getText() != null) {
+                            // Char box color scheme remains at light mode
+                            currentCharBox.setBackground(currentBackgroundScheme);
+                            currentCharBox.setForeground(currentTextScheme);
+                            currentCharBox.setText(null);
+                            currentCharBox.setEnabled(false);
+                        }
+                    }
+                }
+                // Clearing 'messageLabel'
+                notifyPlayer(null);
+                resetActiveCharPanel();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            // If the player has NOT made at least one(1) guess
+        } else {
+            notifyPlayer("You haven't made a guess yet, so why restart?");
+        }
     }
 
-    // Notifications
+    // Switches from light to dark mode and vice versa
+    protected void colorSchemeChange() {
+        if (isDarkMode) {
+            currentBackgroundScheme = new Color(238, 238, 238);
+            currentTextScheme = new Color(0, 0, 0);
+        } else {
+            currentBackgroundScheme = new Color(21, 21, 21);
+            currentTextScheme = new Color(255, 255, 255);
+        }
+        isDarkMode = !isDarkMode; // Switch from true to false and vice versa
+
+        // Setting all the panels to the new color scheme
+        panelMain.setBackground(currentBackgroundScheme);
+        for (Component item : panelMain.getComponents()) {
+            if (item instanceof JPanel) {
+                JPanel currentPanel = (JPanel) item;
+                currentPanel.setBackground(currentBackgroundScheme);
+            } else if (item instanceof JLabel) {
+                JLabel currentLabel = (JLabel) item;
+                currentLabel.setForeground(currentTextScheme);
+            }
+        }
+    }
+    
+    // Notifications for the player
     protected void notifyPlayer(String message) {
         messageLabel.setText(message);
     }
@@ -270,17 +334,25 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     public void keyPressed(KeyEvent key) {
     }
 
+    // Assembles a string from the char boxes upon releasing the enter key
+    // Sends the string to 'interpretInputtedWord' if the string is valid
+    // Otherwise, warns the player appropriately
+    protected String previousInput = "";
+
     public void keyReleased(KeyEvent key) {
         if (key.getKeyCode() == KeyEvent.VK_ENTER) {
-            final String inputtedString = readActiveCharPanel().trim();
+            final String inputtedString = readActiveCharPanel().toLowerCase().replaceAll(" ", "");
 
-            if (inputtedString.length() == 5) {
+            // Tracking the previous inputted String lets us cut back on calling
+            // checkWord(), especially if the player's entry is gibberish
+            if (inputtedString.length() == 5 && !inputtedString.equals(previousInput)) {
                 interpretInputtedWord(inputtedString);
-            } else {
+            } else if (inputtedString.length() != 5) {
                 notifyPlayer("Your guess must contain five letters.");
             } else {
-                notifyPlayer("Your guess must contain five letters.");
+                notifyPlayer("Don't reuse the same guess twice in a row.");
             }
+            previousInput = inputtedString;
         }
     }
 
@@ -289,6 +361,11 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
 
     // For button events
     public void actionPerformed(ActionEvent event) {
-
+        if (event.getSource() == retryButton) {
+            restart();
+        }
+        if (event.getSource() == darkModeToggle) {
+            colorSchemeChange();
+        }
     }
 }

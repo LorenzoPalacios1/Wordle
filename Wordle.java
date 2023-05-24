@@ -268,6 +268,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                 attempt = 0;
                 bannedLetters = "";
                 previousInput = "";
+                // Generating another word
                 do {
                     generatedWord = RandomWord.generateWord();
                 } while (!WordCheck.checkWord(generatedWord));
@@ -326,8 +327,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
 
             for (int i = 0; i < currentPanel.getComponentCount(); i++) {
                 JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(i);
-                    currentCharBox.setBackground(currentBackgroundScheme);
-                    currentCharBox.setForeground(currentTextScheme);
+                currentCharBox.setBackground(currentBackgroundScheme);
+                currentCharBox.setForeground(currentTextScheme);
             }
         }
     }

@@ -65,7 +65,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         title.setText("Wordle");
 
         messageLabel = new JLabel();
-        messageLabel.setPreferredSize(new Dimension(600, 30));
+        messageLabel.setPreferredSize(new Dimension(450, 30));
         messageLabel.setFont(new Font("Arial", 2, 16));
 
         // Panel to arrange char boxes into a vertical column
@@ -165,7 +165,6 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             for (JFormattedTextField charBox : activePanelCharBoxes) {
                 charBox.addKeyListener(this);
                 charBox.addActionListener(this);
-                charBox.setText(null);
                 charBox.setEnabled(true);
             }
             activePanelCharBoxes[0].requestFocusInWindow();
@@ -177,12 +176,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         String word = "";
 
         // Reading chars from 'activePanel' into String 'word'
-        // refactor
-        for (int i = 0; i < activePanelCharBoxes.length; i++) {
-            if (activePanel.getComponent(i) instanceof JFormattedTextField) {
-                activePanelCharBoxes[i] = (JFormattedTextField) activePanel.getComponent(i);
-                word += activePanelCharBoxes[i].getText();
-            }
+        for (JFormattedTextField charBox : activePanelCharBoxes) {
+            word += charBox.getText();
         }
 
         return word;
@@ -192,9 +187,9 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // This function changes char box colors, increments the player's current
     // 'attempt' as necessary, and adds banned chars to 'bannedLetters'
     protected void interpretInputtedWord(String word) {
-        final Color charNotFound = new Color(155, 0, 0);
-        final Color charInString = new Color(180, 113, 50);
-        final Color charCorrectPlace = new Color(0, 155, 0);
+        final Color charNotFound = new Color(155, 0, 0); // Red
+        final Color charInString = new Color(180, 113, 50); // Yellow
+        final Color charCorrectPlace = new Color(0, 155, 0); // Green
 
         try {
             if (WordCheck.checkWord(word)) {
@@ -240,6 +235,10 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                             notifyPlayer(String.format("Correct! You managed to guess \"%s\" in %d attempts!",
                                     generatedWord, attempt));
                         }
+                        // If the player failed on their final guess
+                    } else if (attempt == 6) {
+                        notifyPlayer(String.format("You failed to guess \"%s\".", generatedWord));
+                        resetActiveCharPanel();
                     } else {
                         resetActiveCharPanel();
                     }
@@ -258,11 +257,12 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
 
     // Clears all colors and text from the char boxes
     // Sets 'attempt' to 0, bannedLetters to empty string, and generates a new word
-    // Will also clear 'messageLabel'
-    // Does NOT regenerate any other parts of the UI or reset color schemes
+    // Will also clear 'messageLabel' and reset the char boxes' color scheme
+    // Does NOT regenerate any other parts of the UI or reset other elements' color
+    // scheme
     protected void restart() {
         // Prevents player from dragging performance if they haven't made at least one
-        // guess
+        // guess since restart() is fairly time-consuming
         if (attempt != 0) {
             try {
                 attempt = 0;
@@ -279,7 +279,8 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
                     // Getting and modifying all of the char boxes in 'currentPanel'
                     for (int x = 0; x < currentPanel.getComponentCount(); x++) {
                         JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(x);
-                        if (currentCharBox.getText() != null) {
+                        // We only need to clear boxes that have text within them
+                        if (currentCharBox.getText().matches("[a-zA-Z]+")) {
                             currentCharBox.setBackground(currentBackgroundScheme);
                             currentCharBox.setForeground(currentTextScheme);
                             currentCharBox.setText(null);
@@ -313,17 +314,24 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         // Setting all the panels to the new color scheme
         panelMain.setBackground(currentBackgroundScheme);
         for (Component item : panelMain.getComponents()) {
-            // refactor
-            if (item instanceof JPanel) {
-                JPanel currentPanel = (JPanel) item;
-                currentPanel.setBackground(currentBackgroundScheme);
-            } else if (item instanceof JLabel) {
+            if (item instanceof JLabel) {
                 JLabel currentLabel = (JLabel) item;
                 currentLabel.setForeground(currentTextScheme);
             }
         }
+
+        // Recoloring char boxes
+        for (int charBoxRow = attempt; charBoxRow < charBoxes.getComponentCount(); charBoxRow++) {
+            JPanel currentPanel = (JPanel) charBoxes.getComponent(charBoxRow);
+
+            for (int i = 0; i < currentPanel.getComponentCount(); i++) {
+                JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(i);
+                    currentCharBox.setBackground(currentBackgroundScheme);
+                    currentCharBox.setForeground(currentTextScheme);
+            }
+        }
     }
-    
+
     // Notifications for the player
     protected void notifyPlayer(String message) {
         messageLabel.setText(message);
@@ -340,7 +348,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
 
     public void keyReleased(KeyEvent key) {
         if (key.getKeyCode() == KeyEvent.VK_ENTER) {
-            final String inputtedString = readActiveCharPanel().toLowerCase().replaceAll(" ", "");
+            final String inputtedString = readActiveCharPanel().toLowerCase().trim();
 
             // Tracking the previous inputted String lets us cut back on calling
             // checkWord(), especially if the player's entry is gibberish

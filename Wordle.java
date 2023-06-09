@@ -1,31 +1,106 @@
 import javax.swing.*;
 import javax.swing.text.MaskFormatter;
 import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.awt.event.KeyListener;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.ActionEvent;
 import java.text.ParseException;
+import java.util.Random;
+import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
 
 public class Wordle extends JFrame implements KeyListener, ActionListener {
+    // THE WORDle
+    protected static String generatedWord;
+    // Init function
+    public static void main(String args[]) throws ParseException {
+        caching cacheProcess = new caching();
+        cacheProcess.start();
+
+        JFrame frame = new Wordle();
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Destroys the window upon the process dying
+
+        generatedWord = generateWordle();
+
+        // Set visibility last so the player doesn't have the opportunity to screw
+        // anything up preemptively
+        frame.setVisible(true);
+    }
+
+    // Will return a five-letter word to be used as the Wordle
+    // Will use a cache if it exists, otherwise will use the generateWord()
+    // function from class RandomWord which takes time since it is an HTTP request
+    protected static String generateWordle() {
+        String word = "";
+
+        File cache = new File("cache");
+        try (Scanner cacheReader = new Scanner(new File("cache"))) {
+            // Used to store every single line in the file
+            String buffer[];
+            // '> 6' exists so we know there are at least ten lines of possibly valid data
+            if (cache.exists() && cache.length() > 60) {
+                // Divide by six since each line in the cache should consists of five characters
+                // and a newline
+                // Divide by two to reduce the total amount of reading necessary by half
+                buffer = new String[(int) cache.length() / 6 / 2];
+            } else {
+                throw new FileNotFoundException();
+            }
+
+            // Determines which half of the file to scan through
+            // A value of 'true' denotes that the first half should be used, so we continue
+            // past this segment as normal
+            // A value of 'false' denotes that the second half should be used, so we discard
+            // the first half of entries in 'cache' in the below loop
+            if (!new Random().nextBoolean()) {
+                for (int i = 0; i < buffer.length; i++) {
+                    cacheReader.nextLine();
+                }
+            }
+
+            // Reading data from 'cache' into 'buffer'
+            for (int i = 0; i < buffer.length; i++) {
+                buffer[i] = cacheReader.nextLine();
+            }
+
+            // Accessing a random index of 'buffer' to return as the generated Wordle
+            // Wrapped in a do-while to ensure the word is a valid English word with five
+            // total letters
+            do {
+                word = buffer[new Random().nextInt(buffer.length)];
+            } while (word.length() != 5 && !WordCheck.checkWord(word));
+        } catch (FileNotFoundException e) { // If the cache does not exist, use the slower generateWord()
+            do {
+                word = RandomWord.generateWord(5);
+            } while (!WordCheck.checkWord(word));
+        }
+        System.out.println(word);
+        return word;
+    }
     // Main JPanels; used to group other instances
     protected JPanel panelMain;
-    protected JPanel charBoxes;
 
+    protected JPanel charBoxes;
     // Self-explanatory text
     protected JLabel title;
-    protected JLabel messageLabel;
 
+    protected JLabel messageLabel;
     // Dark mode and retryButton buttons
     protected JButton retryButton;
-    protected JToggleButton darkModeToggle;
 
+    protected JToggleButton darkModeToggle;
     // These variables keep track of guesses and attempts
     protected JPanel activePanel;
     protected int attempt = 0;
 
     // Used for either dark or light mode; starts off in light
     protected Boolean isDarkMode = false;
+
     protected Color currentBackgroundScheme = new Color(238, 238, 238);
+
     protected Color currentTextScheme = new Color(0, 0, 0);
 
     // For easy access to the active char boxes
@@ -34,26 +109,13 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // necessary functions and features
     protected JFormattedTextField activePanelCharBoxes[];
 
-    // THE WORDle
-    protected static String generatedWord;
-
     // Banned characters when the player guesses incorrectly
     protected String bannedLetters = "";
 
-    // Initializing function main()
-    public static void main(String args[]) throws ParseException, IOException, URISyntaxException {
-        JFrame frame = new Wordle();
-        frame.pack();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Destroys the window upon the process dying
-
-        // Word generation
-        do {
-            generatedWord = RandomWord.generateWord();
-        } while (!WordCheck.checkWord(generatedWord));
-        // Set visibility last so the player doesn't have the opportunity to screw
-        // anything up preemptively
-        frame.setVisible(true);
-    }
+    // Assembles a string from the char boxes upon releasing the enter key
+    // Sends the string to 'interpretInputtedWord' if the string is valid
+    // Otherwise, warns the player appropriately
+    protected String previousInput = "";
 
     // Driving constructor
     Wordle() throws ParseException {
@@ -93,6 +155,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         retryButton.setToolTipText("Retry");
         retryButton.setPreferredSize(new Dimension(50, 50));
         retryButton.addActionListener(this);
+
         darkModeToggle = new JToggleButton(sunIcon);
         darkModeToggle.setToolTipText("Toggle Dark Mode");
         darkModeToggle.setPreferredSize(new Dimension(50, 50));
@@ -107,6 +170,40 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
 
         // Finalizing
         setContentPane(panelMain);
+    }
+
+    // Associated key events (only keyReleased() used)
+    public void keyPressed(KeyEvent key) {
+    }
+
+    public void keyReleased(KeyEvent key) {
+        if (key.getKeyCode() == KeyEvent.VK_ENTER) {
+            final String inputtedString = readActiveCharPanel().toLowerCase().trim();
+
+            // Tracking the previous inputted String lets us cut back on calling
+            // checkWord(), especially if the player's entry is gibberish
+            if (inputtedString.length() == 5 && !inputtedString.equals(previousInput)) {
+                interpretInputtedWord(inputtedString);
+            } else if (inputtedString.length() != 5) {
+                notifyPlayer("Your guess must contain five letters.");
+            } else {
+                notifyPlayer("Don't reuse the same guess twice in a row.");
+            }
+            previousInput = inputtedString;
+        }
+    }
+
+    public void keyTyped(KeyEvent key) {
+    }
+
+    // For button events
+    public void actionPerformed(ActionEvent event) {
+        if (event.getSource() == retryButton) {
+            restart();
+        }
+        if (event.getSource() == darkModeToggle) {
+            colorSchemeChange();
+        }
     }
 
     // Creates an image for use as an icon
@@ -128,7 +225,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         final GridLayout layout = new GridLayout(1, 5); // One row, five columns; used for 'charBoxPanel' generation
         final Dimension panelSize = new Dimension(240, 40); // Size of each char box row
 
-        // Creating a JPanel to hold the generated char boxes
+        // Creating a JPanel to hold thboxese generated char boxes
         final JPanel charBoxPanel = new JPanel(layout);
         charBoxPanel.setPreferredSize(panelSize);
 
@@ -138,7 +235,7 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
             newCharBox = new JFormattedTextField(charOnlyFormatter);
             newCharBox.setPreferredSize(new Dimension(40, 40));
             newCharBox.setBackground(currentBackgroundScheme);
-            newCharBox.setEnabled(false); // resetActiveCharPanel() enables as necessary
+            newCharBox.setEnabled(false); // resetActiveCharPanel() enables boxes as necessary
             charBoxPanel.add(newCharBox);
         }
         // Adds the row of char boxes to the main JPanel 'charBoxes'
@@ -204,75 +301,71 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
         final Color charInString = new Color(180, 113, 50); // Yellow
         final Color charNotFound = new Color(155, 0, 0); // Red
 
-        try {
-            if (WordCheck.checkWord(word)) {
-                // Making sure banned letters aren't repeated and notifying the user as
-                // necessary
-                // Stops after finding a single banned letter, hence 'index == -1'
-                int index = -1;
-                for (int i = 0; i < bannedLetters.length() && index == -1; i++) {
-                    index = word.indexOf(bannedLetters.charAt(i));
-                }
+        if (WordCheck.checkWord(word)) {
+            // Making sure banned letters aren't repeated and notifying the user as
+            // necessary
+            // Stops after finding a single banned letter, hence 'index == -1'
+            int index = -1;
+            for (int i = 0; i < bannedLetters.length() && index == -1; i++) {
+                index = word.indexOf(bannedLetters.charAt(i));
+            }
 
-                // Continues if a banned letter wasn't found
-                if (index == -1) {
-                    String currentChar; // Used to determine if a single character is present in the 'generatedWord'
-                    // using String.contains(), which requires a CharSequence (basically a String)
-                    // and doesn't accept a char
-                    Boolean correctGuess = true; // Will turn to false if a character is incorrect
-                    // Used to determine if a guess is a winning one or not
+            // Continues if a banned letter wasn't found
+            if (index == -1) {
+                // We increment 'attempt' here so that when printing the player's current
+                // attempt it's actually correct and not off by one and because we don't count
+                // guesses that contain banned or already used letters
+                attempt++;
 
+                // Used to determine if a single character is present in the 'generatedWord'
+                // using String.contains(), which requires a CharSequence (basically a String)
+                // and doesn't accept a char
+                String currentChar;
+
+                // If the guessed word is NOT correct
+                boolean isGuessCorrect = word.equals(generatedWord);
+                if (!isGuessCorrect) {
                     // Iterating through the passed word
                     for (int i = 0; i < word.length(); i++) {
-                        currentChar = word.substring(i, i + 1); // Assigning the current char to be read as a String if
-                                                                // needed
+                        // Preemptively assigning the current char as a String if needed
+                        currentChar = word.substring(i, i + 1);
 
                         if (word.charAt(i) == generatedWord.charAt(i)) {
                             activePanelCharBoxes[i].setBackground(charCorrectPlace);
                         } else if (currentChar != null && generatedWord.contains(currentChar)) {
                             activePanelCharBoxes[word.indexOf(currentChar)].setBackground(charInString);
-                            correctGuess = false;
                         } else {
                             activePanelCharBoxes[i].setBackground(charNotFound);
                             bannedLetters += currentChar; // Adding the character to 'bannedLetters'
-                            correctGuess = false;
                         }
                     }
-
-                    // We increment 'attempt' here so that when printing the player's current
-                    // attempt it's actually correct and not behind by one
-                    // (remember, 'attempt' is used as an index for resetCharBoxRow() to identify
-                    // the next row of char
-                    // boxes out of the JPanel 'charBoxes')
-                    attempt++;
-                    // If the 'generatedWord' was guessed correctly
-                    if (correctGuess) {
-                        for (JFormattedTextField charbox : activePanelCharBoxes) {
-                            charbox.setEnabled(false);
-                        }
-                        if (attempt == 1) { // If the player SOMEHOW guessed correctly with their first attempt
-                            notifyPlayer(String.format("Wow! You managed to guess \"%s\" in a single attempt!",
-                                    generatedWord));
-                        } else { // If the player guesses correct after having made more than one attempt
-                            notifyPlayer(String.format("Correct! You managed to guess \"%s\" in %d attempts!",
-                                    generatedWord, attempt));
-                        }
-                    } else if (attempt == 6) { // If the player failed on their final guess, notify the player
+                    // Enabling the next row of char boxes for the player and disabling the previous
+                    if (attempt == 6) { // If this was the player's last guess, notify them
                         notifyPlayer(String.format("You failed to guess \"%s\".", generatedWord));
                         resetActiveCharPanel();
-                    } else { // Otherwise, reset the currently active row of char boxes to the next
+                    } else if (attempt != 6) { // Otherwise, just enable the next row of char boxes
                         resetActiveCharPanel();
                     }
-                } else { // If the passed string contains letters stored in 'bannedLetters'
-                    notifyPlayer("Your guess contains banned letters.");
+                } else { // If the guessed word IS correct
+                    for (JFormattedTextField charbox : activePanelCharBoxes) {
+                        charbox.setEnabled(false);
+                        charbox.setBackground(charCorrectPlace);
+                    }
+
+                    // Notifying the player of their correct guess
+                    if (attempt == 1) { // If the player SOMEHOW guessed correctly with their first attempt
+                        notifyPlayer(String.format("Wow! You managed to guess \"%s\" in a single attempt!",
+                                generatedWord));
+                    } else { // If the player guesses correct after having made more than one attempt
+                        notifyPlayer(String.format("Correct! You managed to guess \"%s\" in %d attempts!",
+                                generatedWord, attempt));
+                    }
                 }
-            } else { // If the passed string is not a valid English word
-                notifyPlayer("Input an actual word this time.");
+            } else { // If the passed string contains letters stored in 'bannedLetters'
+                notifyPlayer("Your guess contains banned letters.");
             }
-        } catch (IOException io) {
-            io.printStackTrace();
-        } catch (URISyntaxException uri) {
-            uri.printStackTrace();
+        } else { // If the passed string is not a valid English word
+            notifyPlayer("Input an actual word this time.");
         }
     }
 
@@ -283,47 +376,42 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     // scheme
     protected void restart() {
         // Prevents player from dragging performance if they haven't made at least one
-        // guess since restart() is fairly time-consuming
+        // guess since calling restart() can be fairly time-consuming
         if (attempt != 0) {
-            try {
-                // Resetting modifiable game variables
-                attempt = 0;
-                bannedLetters = "";
-                previousInput = "";
+            // Resetting modifiable game variables
+            attempt = 0;
+            bannedLetters = "";
+            previousInput = "";
 
-                // Generating another word
-                do {
-                    generatedWord = RandomWord.generateWord();
-                } while (!WordCheck.checkWord(generatedWord));
+            // Generating another word
+            generatedWord = generateWordle();
 
-                // Getting all of the JPanels in 'charBoxes'
-                // Using a standard for-loop so that type-casting can take place for
-                // 'currentPanel' since if we had used charBoxes.getComponents(), the returned
-                // array would be of type 'Component', which is a superclass of JPanel and lacks
-                // necessary features
-                for (int i = 0; i < charBoxes.getComponentCount(); i++) {
-                    JPanel currentPanel = (JPanel) charBoxes.getComponent(i);
+            // Getting all of the JPanels in 'charBoxes'
+            // Using a standard for-loop so that type-casting can take place for
+            // 'currentPanel' since if we had used charBoxes.getComponents(), the returned
+            // array would be of type 'Component', which is a superclass of JPanel and lacks
+            // necessary features
+            for (int i = 0; i < charBoxes.getComponentCount(); i++) {
+                JPanel currentPanel = (JPanel) charBoxes.getComponent(i);
 
-                    // Getting and modifying all of the char boxes in 'currentPanel'
-                    for (int x = 0; x < currentPanel.getComponentCount(); x++) {
-                        JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(x);
+                // Getting and modifying all of the char boxes in 'currentPanel'
+                for (int x = 0; x < currentPanel.getComponentCount(); x++) {
+                    JFormattedTextField currentCharBox = (JFormattedTextField) currentPanel.getComponent(x);
 
-                        // We only need to clear boxes that have text within them
-                        if (currentCharBox.getText().matches("[a-zA-Z]+")) {
-                            currentCharBox.setBackground(currentBackgroundScheme);
-                            currentCharBox.setForeground(currentTextScheme);
-                            currentCharBox.setText(null);
-                            currentCharBox.setEnabled(false); // resetActiveCharPanel() enables as necessary
-                        }
+                    // We only need to clear boxes that have text within them
+                    if (!currentCharBox.getText().isBlank()) {
+                        currentCharBox.setBackground(currentBackgroundScheme);
+                        currentCharBox.setForeground(currentTextScheme);
+                        currentCharBox.setText(null);
+                        currentCharBox.setEnabled(false); // resetActiveCharPanel() enables as necessary
                     }
                 }
-
-                // Clearing 'messageLabel' and resetting the 'activePanel' to the first row of char boxes
-                notifyPlayer(null);
-                resetActiveCharPanel();
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+
+            // Clearing 'messageLabel' and resetting the 'activePanel' to the first row of
+            // char boxes
+            notifyPlayer(null);
+            resetActiveCharPanel();
         } else { // If the player has NOT made at least one(1) guess
             notifyPlayer("You haven't made a guess yet, so why restart?");
         }
@@ -365,43 +453,21 @@ public class Wordle extends JFrame implements KeyListener, ActionListener {
     protected void notifyPlayer(String message) {
         messageLabel.setText(message);
     }
+}
 
-    // Associated key events (only keyReleased() used)
-    public void keyPressed(KeyEvent key) {
-    }
+// Used to develop a cache of potential Wordles for quick access
+// This allows the game to skip over some particularly long HTTP requests from RandomWord
+class caching extends Thread {
+    public void run() {
+        File cache = new File("cache");
+        // Cleans up any invalid Strings
+        WordCheck.removeNonEnglishInFile(cache);
 
-    // Assembles a string from the char boxes upon releasing the enter key
-    // Sends the string to 'interpretInputtedWord' if the string is valid
-    // Otherwise, warns the player appropriately
-    protected String previousInput = "";
-
-    public void keyReleased(KeyEvent key) {
-        if (key.getKeyCode() == KeyEvent.VK_ENTER) {
-            final String inputtedString = readActiveCharPanel().toLowerCase().trim();
-
-            // Tracking the previous inputted String lets us cut back on calling
-            // checkWord(), especially if the player's entry is gibberish
-            if (inputtedString.length() == 5 && !inputtedString.equals(previousInput)) {
-                interpretInputtedWord(inputtedString);
-            } else if (inputtedString.length() != 5) {
-                notifyPlayer("Your guess must contain five letters.");
-            } else {
-                notifyPlayer("Don't reuse the same guess twice in a row.");
-            }
-            previousInput = inputtedString;
-        }
-    }
-
-    public void keyTyped(KeyEvent key) {
-    }
-
-    // For button events
-    public void actionPerformed(ActionEvent event) {
-        if (event.getSource() == retryButton) {
-            restart();
-        }
-        if (event.getSource() == darkModeToggle) {
-            colorSchemeChange();
+        // Adds onto the existing cache
+        // Will continue until thread death or the file containing more than 250 lines
+        // (words)
+        while (this.isAlive() && (int) cache.length() / 6 < 250) {
+            RandomWord.generateWordsInFile(cache, 10, 5);
         }
     }
 }

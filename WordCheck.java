@@ -6,8 +6,11 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-abstract public class WordCheck {
+final public class WordCheck {
     final protected static String dictionaryURL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 
     /**
@@ -141,9 +144,8 @@ abstract public class WordCheck {
 
         System.out.println("Testing checkWord() method");
 
-        String word;
         for (int i = 0; i < 5; i++) {
-            word = RandomWord.generateWord();
+            final String word = RandomWord.generateWord();
 
             if (word == null) {
                 System.err.printf("Test %d returned null\n", i);
@@ -169,7 +171,7 @@ abstract public class WordCheck {
         System.out.println("Testing removeNonEnglishInFile() method");
 
         RandomWord.generateWordsInFile(TEST_CASE_AMOUNT_OF_WORDS, TEST_CASE_LENGTH_OF_WORDS);
-        System.out.printf("removeNonEnglishInFile() removed %d Strings from the passed test file\n",
+        System.out.printf("removeNonEnglishInFile() removed %d String(s) from the passed test file\n",
                 removeNonEnglishInFile("generated_words.txt").length);
 
         // Calculating how much time the test took
@@ -179,10 +181,52 @@ abstract public class WordCheck {
         // Now testing removeNonEnglishInArray()
         System.out.println("Testing removeNonEnglishInArray() method");
 
-        final String[] tempWordContainer = RandomWord.generateWordsInArray(TEST_CASE_AMOUNT_OF_WORDS,
-                TEST_CASE_LENGTH_OF_WORDS);
-        System.out.printf("removeNonEnglishInArray() removed %d Strings from the passed test array\n",
-                tempWordContainer.length - removeNonEnglishInArray(tempWordContainer).length);
+        // ExecutorService used for 'Future' usage to help prevent null array returns
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        // Retrieves an array of random words
+        final Future<String[]> randomWordsArr = executor.submit(() -> {
+            return RandomWord.generateWordsInArray(TEST_CASE_AMOUNT_OF_WORDS, TEST_CASE_LENGTH_OF_WORDS);
+        });
+
+        try {
+            // Retrieving the test input array
+            final String[] stringArrayIn = randomWordsArr.get();
+
+            // Calling removeNonEnglishInArray() while printing the contents of
+            // 'stringArrayIn' so that the output array will be ready as soon as possible
+            final Future<String[]> filteredWordsArray = executor.submit(() -> {
+                return removeNonEnglishInArray(stringArrayIn);
+            });
+
+            // Printing the contents of the test input array
+            System.out.println("Contents of test input array:");
+            for (final String word : stringArrayIn) {
+                System.out.print(word + " ");
+            }
+
+            // Getting the returned value(s) from removeNonEnglishInArray() and printing the returned contents
+            System.out.println("\nContents of test output array:");
+            final String[] stringArrayOut = filteredWordsArray.get();
+            for (final String word : stringArrayOut) {
+                System.out.print(word + " ");
+            }
+
+            // Printing how many Strings were removed from 'stringArrayIn' by
+            // removeNonEnglishInArray()
+            System.out.printf("\ngenerateWordsInArray() removed %d String(s) from the test input array\n",
+                    stringArrayIn.length - stringArrayOut.length);
+        } catch (final InterruptedException interrupt) {
+            System.err.println("generateWordsInArray() interrupted; skipping removeNonEnglishInArray() test case\n Trace:\n");
+            interrupt.printStackTrace();
+        } catch (final NullPointerException nullFound) {
+            System.err.println("Could not fetch input or output\n Trace:\n");
+            nullFound.printStackTrace();
+        } catch (final Exception other) { // For everything else
+            other.printStackTrace();
+        }
+        executor.close();
+
         // Calculating how much time the test took
         elapsedTimePerTest[2] = System.nanoTime() / 1000000
                 - (startTime + elapsedTimePerTest[0] + elapsedTimePerTest[1]);

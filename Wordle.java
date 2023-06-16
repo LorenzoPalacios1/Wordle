@@ -26,24 +26,22 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.MaskFormatter;
 
-final public class Wordle extends JFrame implements KeyListener, ActionListener {
-    /** THE WORDle */
-    protected static String generatedWord;
-
+final public class Wordle implements KeyListener, ActionListener {
     // Init function
     final public static void main(final String[] args) throws ParseException {
         final caching cacheProcess = new caching();
         cacheProcess.start();
 
-        final JFrame frame = new Wordle();
-        frame.pack();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Destroys the window upon the process dying
+        final Wordle game = new Wordle();
 
-        generatedWord = generateWordle();
+        game.frame.pack();
+        game.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Destroys the window upon the process dying
+
+        game.generatedWord = generateWordle();
 
         // Set visibility last so the player doesn't have the opportunity to screw
         // anything up preemptively
-        frame.setVisible(true);
+        game.frame.setVisible(true);
     }
 
     /**
@@ -102,6 +100,9 @@ final public class Wordle extends JFrame implements KeyListener, ActionListener 
         System.out.println(word);
         return word;
     }
+
+    /** THE WORDle */
+    protected String generatedWord;
 
     /** Used to group the entire GUI. */
     final protected JPanel panelMain;
@@ -187,7 +188,6 @@ final public class Wordle extends JFrame implements KeyListener, ActionListener 
      * alphabetical character at a time.
      */
     final charOnlyFilter filter = new charOnlyFilter();
-
     /**
      * Describes the default size for generated char boxes in
      * {@code createCharBoxRow()}.
@@ -200,10 +200,13 @@ final public class Wordle extends JFrame implements KeyListener, ActionListener 
      */
     final Font charBoxFont = new Font("Arial", 1, 24);
 
+    /** The primary window for the game. */
+    protected JFrame frame;
+
     /** Driving constructor. */
     protected Wordle() throws ParseException {
-        // Naming the window
-        super("Wordle");
+        // Creating and naming the window
+        frame = new JFrame("Wordle");
 
         // Creating the main panel for the UI
         panelMain = new JPanel();
@@ -252,7 +255,7 @@ final public class Wordle extends JFrame implements KeyListener, ActionListener 
         panelMain.add(darkModeToggle);
 
         // Finalizing
-        setContentPane(panelMain);
+        frame.setContentPane(panelMain);
     }
 
     // Associated key events below; linked only to the char boxes and nothing else

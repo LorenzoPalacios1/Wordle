@@ -4,8 +4,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-abstract public class RandomWord {
+final public class RandomWord {
     /**
      * The minimum amount of characters a returned word can contain.
      */
@@ -14,6 +17,9 @@ abstract public class RandomWord {
      * The maximum amount of characters a returned word can contain.
      */
     final public static int MAX_WORD_LENGTH = 15;
+
+    /** How long a request should wait for a response. */
+    final protected static int BASE_READ_TIMEOUT = 5000;
 
     final static String defaultFileName = "generated_words.txt";
 
@@ -29,8 +35,8 @@ abstract public class RandomWord {
                     "https://random-word-api.herokuapp.com/word?length=" + wordLength)
                     .toURL()
                     .openConnection();
-            wordSource.setConnectTimeout(5000);
-            wordSource.setReadTimeout(5000);
+            wordSource.setConnectTimeout(BASE_READ_TIMEOUT);
+            wordSource.setReadTimeout(BASE_READ_TIMEOUT);
 
             final InputStream word = wordSource.getInputStream();
 
@@ -89,7 +95,8 @@ abstract public class RandomWord {
                 final URLConnection wordSource = new URI(String.format(
                         "https://random-word-api.herokuapp.com/word?number=%d&length=%d", wordAmount, wordLength))
                         .toURL().openConnection();
-
+                wordSource.setConnectTimeout(BASE_READ_TIMEOUT * 2);
+                wordSource.setReadTimeout(BASE_READ_TIMEOUT * 2);
                 // Output file
                 final FileWriter output = new FileWriter(file, append);
 
@@ -228,6 +235,8 @@ abstract public class RandomWord {
                 final URLConnection wordSource = new URI(String.format(
                         "https://random-word-api.herokuapp.com/word?number=%d&length=%d", wordAmount, wordLength))
                         .toURL().openConnection();
+                wordSource.setConnectTimeout(BASE_READ_TIMEOUT * 2);
+                wordSource.setReadTimeout(BASE_READ_TIMEOUT * 2);
                 final byte[] rawReturnedData = wordSource.getInputStream().readAllBytes();
 
                 final String[] wordsArray = new String[wordAmount];
@@ -310,12 +319,29 @@ abstract public class RandomWord {
         System.out.printf("generateWordsInFile() tests complete after %d ms\n\n", elapsedTimePerTest[1]);
 
         // Testing generateWordsInArray()
+        // ExecutorService used for 'Future' usage to help prevent null array returns
         System.out.println("Testing generateWordsInArray() method");
-        final String[] words = generateWordsInArray(TEST_CASE_AMOUNT_OF_WORDS, TEST_CASE_LENGTH_OF_WORDS);
 
-        for (int i = 0; i < words.length; i++) {
-            System.out.printf("generateWordsInArray() index %d contains String \"%s\"\n", i, words[i]);
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final Future<String[]> requestWords = executor.submit(() -> {
+            return generateWordsInArray(TEST_CASE_AMOUNT_OF_WORDS, TEST_CASE_LENGTH_OF_WORDS);
+        });
+
+        try {
+            final String[] words = requestWords.get();
+            for (int i = 0; i < words.length; i++) {
+                System.out.printf("generateWordsInArray() index %d contains String \"%s\"\n", i, words[i]);
+            }
+        } catch (final InterruptedException interrupt) {
+            System.out.println("generateWordsInArray() interrupted; skipping this test case\n Trace:\n");
+            interrupt.printStackTrace();
+        } catch (final NullPointerException nullFound) {
+            System.err.println("Could not fetch input or output\n Trace:\n");
+            nullFound.printStackTrace();
+        } catch (final Exception other) { // For everything else
+            other.printStackTrace();
         }
+        executor.close();
 
         // Calculating how much time the test took
         elapsedTimePerTest[2] = System.nanoTime() / 1000000

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "MyBasics.h"
 
 #define MAX_PLR_GUESSES 6
 #define WORDLE_LENGTH 5
@@ -49,10 +48,11 @@ char interpret_guess(const char *wordle, const char *guess)
     puts(guess);
     for (size_t i = 0; i < strlen(guess); i++)
     {
-        const int char_index = indexOf(wordle, guess[i], 0);
-        if (char_index == -1)
+        const char *char_ptr_wordle = strchr(wordle, guess[i]);
+        const char *char_ptr_guess = strchr(guess, wordle[i]);
+        if (char_ptr_wordle == NULL)
             putchar(WRONG_CHAR_INDICATOR);
-        else if (wordle[char_index] != guess[char_index])
+        else if (char_ptr_wordle != char_ptr_guess)
             putchar(BAD_CHAR_POS_INDICATOR);
         else
             putchar(CORRECT_INDICATOR);
@@ -68,22 +68,26 @@ int main(void)
     const char *wordle = generate_wordle(WORDLE_LENGTH);
     intro();
 
-    // "+ 1" to account for the null terminator
-
-    for (int i = 0; i < MAX_PLR_GUESSES; i++)
+    static char plr_guess[WORDLE_LENGTH + 1];
+    for (int i = 0; i <= MAX_PLR_GUESSES; i++)
     {
-        char *plr_guess = NULL;
         printf("Enter your guess: ");
-        const size_t GUESS_STR_LEN = getStrStdin(&plr_guess, WORDLE_LENGTH);
-        if (GUESS_STR_LEN == 0)
+        // Getting the player's guess
+        for (size_t i = 0; i < sizeof(plr_guess) - 1; i++)
         {
-            i--;
-            continue;
+            if ((plr_guess[i] = getchar()) == '\n')
+            {
+                plr_guess[i] = '\0';
+                break;
+            }
         }
-
+        plr_guess[sizeof(plr_guess) - 1] = '\0';
+        // fseek() here to clear any unused input
+        fseek(stdin, 0, SEEK_END);
         
+        interpret_guess(wordle, plr_guess);
 
-        printf("%d guesses left!\n", MAX_PLR_GUESSES - i);
+        i == MAX_PLR_GUESSES - 1 ? puts("1 guess left!\n") : printf("%d guesses left!\n", MAX_PLR_GUESSES - i);
     }
     free((char *)wordle);
     return 0;

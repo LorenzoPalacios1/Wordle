@@ -32,9 +32,10 @@ void intro(void)
     printf("A \"%c\" beneath your guess means that the character above it is present in the Wordle, but in the wrong position.\n", BAD_CHAR_POS_INDICATOR);
     printf("Finally, a \"%c\" beneath your guess means that the character above it is NOT in the Wordle.\n", WRONG_CHAR_INDICATOR);
 
-    puts("\nAnd that's it!\n"
-         "Oh, and by the way, the Wordle is a string of random characters, so it's probably not even an actual word!\n"
-         "So, go ahead and...\n");
+    printf("\nAnd that's it!\n"
+           "Oh, and by the way, the Wordle is a string of %llu random characters, so it's probably not even an actual word!\n"
+           "So, go ahead and...\n\n",
+           WORDLE_LENGTH);
 }
 
 // This function will take user's guess, compare it to the Wordle, print out helpful
@@ -67,7 +68,7 @@ int main(void)
     srand(time(NULL));
     const char *wordle = generate_wordle(WORDLE_LENGTH);
     intro();
-
+    puts(wordle);
     static char plr_guess[WORDLE_LENGTH + 1];
     for (int i = 0; i <= MAX_PLR_GUESSES; i++)
     {
@@ -84,8 +85,12 @@ int main(void)
         plr_guess[sizeof(plr_guess) - 1] = '\0';
         // fseek() here to clear any unused input
         fseek(stdin, 0, SEEK_END);
-        
-        interpret_guess(wordle, plr_guess);
+
+        if (interpret_guess(wordle, plr_guess))
+        {
+            i == 0 ? printf("Wow! You managed to guess \"%s\" in just 1 try!\n", wordle) : printf("You did it! You managed to guess \"%s\" in %llu tries!\n", wordle, i + 1);
+            break;
+        }
 
         i == MAX_PLR_GUESSES - 1 ? puts("1 guess left!\n") : printf("%d guesses left!\n", MAX_PLR_GUESSES - i);
     }

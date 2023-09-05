@@ -50,10 +50,9 @@ char interpret_guess(const char *wordle, const char *guess)
     for (size_t i = 0; i < strlen(guess); i++)
     {
         const char *char_ptr_wordle = strchr(wordle, guess[i]);
-        const char *char_ptr_guess = strchr(guess, wordle[i]);
         if (char_ptr_wordle == NULL)
             putchar(WRONG_CHAR_INDICATOR);
-        else if (char_ptr_wordle != char_ptr_guess)
+        else if (wordle[i] != guess[i])
             putchar(BAD_CHAR_POS_INDICATOR);
         else
             putchar(CORRECT_INDICATOR);

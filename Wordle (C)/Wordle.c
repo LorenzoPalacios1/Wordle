@@ -68,19 +68,21 @@ int main(void)
     const char *wordle = generate_wordle(WORDLE_LENGTH);
     intro();
 
+    // "+ 1" to account for the null terminator
+
     for (int i = 0; i < MAX_PLR_GUESSES; i++)
     {
+        char *plr_guess = NULL;
         printf("Enter your guess: ");
-        const char *plr_guess = getStrStdin(WORDLE_LENGTH);
-
-        if (interpret_guess(wordle, plr_guess) == 1)
+        const size_t GUESS_STR_LEN = getStrStdin(&plr_guess, WORDLE_LENGTH);
+        if (GUESS_STR_LEN == 0)
         {
-            printf("Congrats! You guessed \"%s\" in %d tries!\n", wordle, i + 1);
-            free((char *)plr_guess);
-            break;
+            i--;
+            continue;
         }
-        // Type-casting to a non-const char* to silence a warning
-        free((char *)plr_guess);
+
+        
+
         printf("%d guesses left!\n", MAX_PLR_GUESSES - i);
     }
     free((char *)wordle);
